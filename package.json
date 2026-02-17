@@ -1,0 +1,24 @@
+{
+  "name": "stock-analyzer",
+  "version": "1.0.0",
+  "description": "US Stock Analysis Web App with Volume Profile",
+  "license": "MIT",
+  "keywords": [
+    "stock",
+    "analysis",
+    "volume-profile",
+    "candlestick",
+    "chart",
+    "yahoo-finance"
+  ],
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "yahoo-finance2": "^2.11.0"
+  }
+}

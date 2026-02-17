@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>美股分析工具 — Stock Analyzer</title>
+  <meta name="description" content="美股走勢分析工具，包含 K 線圖、均線、成交量及分價量圖（Volume Profile）">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-left">
+        <div class="logo">
+          <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+            <rect width="28" height="28" rx="6" fill="url(#logo-grad)"/>
+            <path d="M7 18L11 12L15 15L21 8" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="21" cy="8" r="2" fill="white"/>
+            <defs><linearGradient id="logo-grad" x1="0" y1="0" x2="28" y2="28"><stop stop-color="#6366f1"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient></defs>
+          </svg>
+          <h1>Stock Analyzer</h1>
+        </div>
+      </div>
+      <div class="header-center">
+        <div class="search-box">
+          <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+          </svg>
+          <input type="text" id="symbolInput" placeholder="輸入美股代號，例如 AAPL、TSLA、NVDA..." autocomplete="off" spellcheck="false">
+          <button id="searchBtn" class="search-btn">
+            <span>搜尋</span>
+          </button>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="period-selector" id="periodSelector">
+          <button class="period-btn" data-period="1mo">1M</button>
+          <button class="period-btn" data-period="3mo">3M</button>
+          <button class="period-btn active" data-period="6mo">6M</button>
+          <button class="period-btn" data-period="1y">1Y</button>
+          <button class="period-btn" data-period="2y">2Y</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Stock Info Bar -->
+    <div class="info-bar" id="infoBar" style="display:none;">
+      <div class="info-main">
+        <span class="info-symbol" id="infoSymbol"></span>
+        <span class="info-name" id="infoName"></span>
+      </div>
+      <div class="info-price">
+        <span class="info-current" id="infoPrice"></span>
+        <span class="info-change" id="infoChange"></span>
+      </div>
+      <div class="info-meta">
+        <span id="infoExchange"></span>
+        <span id="infoVolume"></span>
+      </div>
+    </div>
+
+    <!-- Chart Container -->
+    <main class="chart-area" id="chartArea">
+      <!-- Placeholder -->
+      <div class="placeholder" id="placeholder">
+        <div class="placeholder-icon">
+          <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+            <rect x="8" y="28" width="8" height="24" rx="2" fill="#4f46e5" opacity="0.3"/>
+            <rect x="20" y="20" width="8" height="32" rx="2" fill="#6366f1" opacity="0.5"/>
+            <rect x="32" y="12" width="8" height="40" rx="2" fill="#818cf8" opacity="0.7"/>
+            <rect x="44" y="8" width="8" height="44" rx="2" fill="#a78bfa" opacity="0.9"/>
+          </svg>
+        </div>
+        <p class="placeholder-title">輸入股票代號開始分析</p>
+        <p class="placeholder-hint">支援所有美股上市股票，例如 AAPL、MSFT、GOOGL、NVDA</p>
+      </div>
+
+      <!-- Main Chart + Volume Profile -->
+      <div class="chart-container" id="chartContainer" style="display:none;">
+        <div class="chart-main" id="chartMain">
+          <!-- TradingView Lightweight Charts renders here -->
+        </div>
+        <div class="chart-divider"></div>
+        <div class="volume-profile-wrapper">
+          <div class="vp-header">
+            <span class="vp-title">分價量圖</span>
+            <span class="vp-subtitle">Volume Profile</span>
+          </div>
+          <canvas id="volumeProfileCanvas"></canvas>
+          <div class="vp-legend">
+            <span class="vp-legend-item vp-legend-high"><span class="vp-dot high"></span>高量區 (支撐/壓力)</span>
+            <span class="vp-legend-item"><span class="vp-dot normal"></span>一般成交量</span>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- MA Legend -->
+    <div class="ma-legend" id="maLegend" style="display:none;">
+      <label class="ma-item">
+        <input type="checkbox" id="maToggle20" checked>
+        <span class="ma-color" style="background:#f59e0b;"></span>
+        MA20
+      </label>
+      <label class="ma-item">
+        <input type="checkbox" id="maToggle60" checked>
+        <span class="ma-color" style="background:#3b82f6;"></span>
+        MA60
+      </label>
+      <label class="ma-item">
+        <input type="checkbox" id="maToggle120" checked>
+        <span class="ma-color" style="background:#a855f7;"></span>
+        MA120
+      </label>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay" style="display:none;">
+      <div class="spinner"></div>
+      <p>正在載入資料...</p>
+    </div>
+
+    <!-- Error Toast -->
+    <div class="toast" id="toast" style="display:none;"></div>
+  </div>
+
+  <script src="https://unpkg.com/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
