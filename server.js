@@ -6,7 +6,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
@@ -22,12 +22,22 @@ async function fetchYahoo(url) {
   return res;
 }
 
+// Helper: detect and normalize stock symbol
+function normalizeSymbol(raw) {
+  let sym = raw.toUpperCase().trim();
+  // Taiwan stocks: pure digits (e.g. 2330) → 2330.TW
+  if (/^\d{4,6}$/.test(sym)) {
+    sym = sym + '.TW';
+  }
+  return sym;
+}
+
 // API: Get stock historical data
 app.get('/api/stock/:symbol', async (req, res) => {
   try {
     const { symbol } = req.params;
     const { period = '6mo', interval = '1d' } = req.query;
-    const sym = symbol.toUpperCase();
+    const sym = normalizeSymbol(symbol);
 
     // Calculate date range
     const endDate = Math.floor(Date.now() / 1000);
