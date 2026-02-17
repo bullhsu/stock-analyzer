@@ -94,6 +94,7 @@ node server.js
 ```
 
 Open **http://localhost:3000** in your browser and enter a US stock ticker (e.g. `AAPL`, `TSLA`, `NVDA`) to start analyzing.
+
 Online test [stock-analyzer-jkea.onrender.com/](https://stock-analyzer-jkea.onrender.com/)
 
 ### 🏗️ Tech Stack
