@@ -29,7 +29,7 @@ node server.js
 ```
 
 瀏覽器開啟 **http://localhost:3000**，輸入美股代號（如 `AAPL`、`TSLA`、`NVDA`）即可開始分析。
-線上測試 [stock-analyzer-jkea.onrender.com/](https://stock-analyzer-jkea.onrender.com/)
+/n線上測試 [stock-analyzer-jkea.onrender.com/](https://stock-analyzer-jkea.onrender.com/)
 
 ### 🏗️ 技術架構
 
