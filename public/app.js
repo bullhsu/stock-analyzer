@@ -331,33 +331,45 @@
 
         if (!vpBinData || !candleSeries || !chart) return;
 
-        const { minPrice, maxPrice, numBins, binSize, bins, binsBuy, binsSell, maxVol, threshold, currentPrice } = vpBinData;
+        const { minPrice, maxPrice, priceRange, numBins, binSize, bins, binsBuy, binsSell, maxVol, threshold, currentPrice } = vpBinData;
 
-        // Use the chart's coordinate system to map prices to Y pixels.
-        // We need the chart container offset relative to the VP canvas.
-        const chartEl = chartMain;
-        const chartRect = chartEl.getBoundingClientRect();
-        const vpRect = canvas.getBoundingClientRect();
-        // Y offset: how far the VP canvas top is from the chart container top
-        const yOffset = chartRect.top - vpRect.top;
+        // Detect mobile: VP is stacked below the chart when its width matches chartMain
+        const isMobile = window.innerWidth <= 768;
 
-        // Map a price to a Y coordinate in the VP canvas
-        const priceToY = (price) => {
-            const chartY = candleSeries.priceToCoordinate(price);
-            if (chartY === null) return null;
-            return chartY + yOffset;
-        };
+        let priceToY;
+        const vpPadding = { top: 8, bottom: 8 };
+        const priceAxisW = isMobile ? 60 : 0;  // Reserve space for price labels on mobile
 
-        // Test if coordinate mapping is working
-        const testTop = priceToY(maxPrice);
-        const testBot = priceToY(minPrice);
-        if (testTop === null || testBot === null) return;
+        if (isMobile) {
+            // Standalone mode: self-contained Y mapping with own price scale
+            const drawH = canvasH - vpPadding.top - vpPadding.bottom;
+            priceToY = (price) => {
+                const ratio = (price - minPrice) / priceRange;
+                return vpPadding.top + (1 - ratio) * drawH;
+            };
+        } else {
+            // Desktop mode: sync with chart's price coordinates
+            const chartRect = chartMain.getBoundingClientRect();
+            const vpRect = canvas.getBoundingClientRect();
+            const yOffset = chartRect.top - vpRect.top;
+
+            priceToY = (price) => {
+                const chartY = candleSeries.priceToCoordinate(price);
+                if (chartY === null) return null;
+                return chartY + yOffset;
+            };
+
+            // Test if coordinate mapping is working
+            const testTop = priceToY(maxPrice);
+            const testBot = priceToY(minPrice);
+            if (testTop === null || testBot === null) return;
+        }
 
         // Drawing area
-        const padding = { left: 4, right: 12 };
+        const padding = { left: 4, right: 12 + priceAxisW };
         const drawW = canvasW - padding.left - padding.right;
 
-        // Draw each bin using chart-aligned coordinates
+        // Draw each bin
         for (let i = 0; i < numBins; i++) {
             const binLow = minPrice + i * binSize;
             const binHigh = binLow + binSize;
@@ -403,6 +415,15 @@
             ctx.lineTo(canvasW - padding.right, currentY);
             ctx.stroke();
             ctx.restore();
+
+            // Draw current price label on mobile
+            if (isMobile) {
+                const priceLabel = currentPrice.toFixed(priceRange > 100 ? 0 : 2);
+                ctx.fillStyle = '#f59e0b';
+                ctx.font = `bold 10px 'Inter', sans-serif`;
+                ctx.textAlign = 'left';
+                ctx.fillText(priceLabel, canvasW - priceAxisW + 4, currentY + 3);
+            }
         }
 
         // Mark support/resistance on high-volume bins
@@ -418,6 +439,40 @@
                 ctx.fillStyle = 'rgba(99, 102, 241, 0.9)';
                 const label = binMid < currentPrice ? '支撐' : '壓力';
                 ctx.fillText(`◀ ${label}`, padding.left + barWidth + 4, y + 3);
+            }
+        }
+
+        // Draw price scale on mobile
+        if (isMobile) {
+            const scaleX = canvasW - priceAxisW;
+            ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(scaleX, 0);
+            ctx.lineTo(scaleX, canvasH);
+            ctx.stroke();
+
+            // Draw price tick marks
+            const numTicks = 6;
+            ctx.fillStyle = 'rgba(152, 152, 176, 0.8)';
+            ctx.font = `10px 'Inter', sans-serif`;
+            ctx.textAlign = 'left';
+            const decimals = priceRange > 100 ? 0 : 2;
+            for (let t = 0; t <= numTicks; t++) {
+                const price = minPrice + (t / numTicks) * priceRange;
+                const y = priceToY(price);
+                if (y === null) continue;
+
+                ctx.fillText(price.toFixed(decimals), scaleX + 4, y + 3);
+
+                // Light grid line
+                ctx.save();
+                ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+                ctx.beginPath();
+                ctx.moveTo(padding.left, y);
+                ctx.lineTo(scaleX, y);
+                ctx.stroke();
+                ctx.restore();
             }
         }
     }
